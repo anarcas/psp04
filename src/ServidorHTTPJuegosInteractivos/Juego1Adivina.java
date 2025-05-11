@@ -14,9 +14,9 @@ import java.util.Random;
  */
 public class Juego1Adivina {
 
-    private static final int NUM_MAX_INTENTOS = 10;
-    private static int numeroSolucion = new Random().nextInt(100) + 1;
-    private static int intentos = 0;
+    public static final int NUM_MAX_INTENTOS = 10; // Made public for ServidorHTTP access
+    public static int numeroSolucion = new Random().nextInt(100) + 1; // public static for access
+    public static int intentos = 0; // public static for access
 
     /**
      * Maneja la lógica del juego cuando el usuario realiza una suposición.
@@ -71,5 +71,8 @@ public class Juego1Adivina {
     public static void resetJuego() {
         numeroSolucion = new Random().nextInt(100) + 1;
         intentos = 0;
+        // Any other state for "desactivaBoton" if it's tracked outside a single call.
+        // In the current Paginas.getAdivinarNumeroHtml, desactivaBoton is determined by conditions.
+    
     }
 }

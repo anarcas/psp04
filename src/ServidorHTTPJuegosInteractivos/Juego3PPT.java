@@ -18,10 +18,10 @@ public class Juego3PPT {
 
     private static final String[] eleccion = {"Piedra", "Papel", "Tijeras"};
     private static final Random random = new Random();
-    private static int victoriasUsuario = 0;
-    private static int victoriasServidor = 0;
-    private static int rondasJugadas = 0;
-    private static final int TOTAL_RONDAS = 5;
+    public static int victoriasUsuario = 0; // public static
+    public static int victoriasServidor = 0; // public static
+    public static int rondasJugadas = 0; // public static
+    public static final int TOTAL_RONDAS = 5; // public static
 
     /**
      * Maneja la lógica del juego "Piedra, Papel o Tijeras" cuando el usuario hace una elección.

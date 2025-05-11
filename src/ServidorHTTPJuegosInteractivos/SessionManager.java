@@ -1,9 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
-
-package ServidorHTTPJuegosInteractivos;
+package ServidorHTTPJuegosInteractivos; // Asegúrate que el package sea el correcto
 
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +30,10 @@ public class SessionManager {
      * @return The user email if the session is valid, null otherwise.
      */
     public static String validateSession(String sessionId) {
-        return activeSessions.get(sessionId);
+        if (sessionId == null) { // <<--- AÑADE ESTA COMPROBACIÓN
+            return null;
+        }
+        return activeSessions.get(sessionId); // Esta es la línea 38
     }
 
     /**
@@ -43,6 +41,8 @@ public class SessionManager {
      * @param sessionId The session ID to invalidate.
      */
     public static void invalidateSession(String sessionId) {
-        activeSessions.remove(sessionId);
+        if (sessionId != null) { // Es buena práctica comprobar aquí también
+            activeSessions.remove(sessionId);
+        }
     }
 }
