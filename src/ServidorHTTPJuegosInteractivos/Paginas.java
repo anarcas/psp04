@@ -18,19 +18,53 @@ public class Paginas {
      * @param message A message to display (e.g., error messages).
      * @return The HTML for the login page.
      */
+    /**
+     * Genera el HTML para la página de inicio de sesión.
+     *
+     * @param message Un mensaje para mostrar (ej. mensajes de error).
+     * @return El HTML para la página de inicio de sesión.
+     */
     public static String getLoginFormHtml(String message) {
-        return "<html><body>"
-                + "<h1>Inicio de Sesión</h1>"
-                + "<form method='POST' action='/login' style='display: flex; flex-direction: column; width: 300px;'>"
-                + "<label for='email'>Email:</label>"
-                + "<input type='email' id='email' name='email' required pattern='^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$' title='Introduce un email válido.'>"
-                + "<label for='password'>Contraseña:</label>"
-                + "<input type='password' id='password' name='password' required minlength='6' pattern='^[a-zA-Z0-9]{6,}$' title='La contraseña debe tener al menos 6 caracteres alfanuméricos.'>"
-                + "<input type='submit' value='Iniciar Sesión' style='margin-top: 10px;'>"
-                + "</form>"
-                + "<p><a href='/register'>¿No tienes cuenta? Regístrate aquí.</a></p>"
-                + (message != null && !message.isEmpty() ? "<p style='color:red;'>" + message + "</p>" : "")
-                + "</body></html>";
+        StringBuilder html = new StringBuilder();
+        html.append("<html>");
+        html.append("<head>");
+        html.append("<title>Inicio de Sesión</title>");
+        html.append("<style>");
+        html.append("body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }");
+        html.append(".container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; }");
+        html.append("h1 { color: #333; margin-bottom: 25px; }");
+        html.append("form { display: flex; flex-direction: column; gap: 15px; }");
+        html.append("label { text-align: left; margin-bottom: -10px; font-weight: bold; color: #555; }");
+        html.append("input[type='email'], input[type='password'] { width: calc(100% - 20px); padding: 10px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }");
+        html.append("input[type='submit'] { background-color: #4CAF50; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }");
+        html.append("input[type='submit']:hover { background-color: #45a049; }");
+        html.append(".message { color: red; margin-top: 15px; font-weight: bold; }");
+        html.append(".register-link { margin-top: 20px; font-size: 14px; }");
+        html.append(".register-link a { color: #007bff; text-decoration: none; }");
+        html.append(".register-link a:hover { text-decoration: underline; }");
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        html.append("<div class='container'>");
+        html.append("<h1>Inicio de Sesión</h1>");
+
+        if (message != null && !message.isEmpty()) {
+            html.append("<p class='message'>").append(message).append("</p>");
+        }
+
+        html.append("<form method='POST' action='/login'>");
+        html.append("<label for='email'>Email:</label>");
+        html.append("<input type='email' id='email' name='email' required pattern='^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,6}$' title='Introduce un email válido.'>");
+        html.append("<label for='password'>Contraseña:</label>");
+        html.append("<input type='password' id='password' name='password' required minlength='6' pattern='^[a-zA-Z0-9]{6,}$' title='La contraseña debe tener al menos 6 caracteres alfanuméricos.'>");
+        html.append("<input type='submit' value='Iniciar Sesión'>");
+        html.append("</form>");
+        html.append("<p class='register-link'>¿No tienes cuenta? <a href='/register'>Regístrate aquí</a></p>");
+        html.append("</div>");
+        html.append("</body>");
+        html.append("</html>");
+
+        return html.toString();
     }
 
     /**
