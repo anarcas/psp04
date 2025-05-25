@@ -1,0 +1,16 @@
+2025-05-25 16:58:20 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 16:58:23 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 16:58:30 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 16:58:32 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 16:58:34 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 16:58:41 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:01:31 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:01:36 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:01:42 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:05:00 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:05:02 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:05:04 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:07:18 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:07:21 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:07:23 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.
+2025-05-25 17:08:13 - Error juego Adivina en la linea 38: El valor introducido no es un número válido. Valor recibido: null.

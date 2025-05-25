@@ -4,19 +4,21 @@
  */
 package ServidorHTTPJuegosInteractivos;
 
-import org.mindrot.jbcrypt.BCrypt; // Import BCrypt library
+// Se importan los paquetes necesarios
+import org.mindrot.jbcrypt.BCrypt;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -28,6 +30,7 @@ import java.util.regex.Pattern;
  * y delega la lógica de los juegos y la generación de HTML a otras clases.
  *
  * @author Antonio Naranjo Castillo
+ * 
  */
 public class ServidorHTTP {
     
@@ -62,9 +65,6 @@ public class ServidorHTTP {
              */
             serverSocket = (SSLServerSocket) ssf.createServerSocket(8066);
             // Se muestran mensajes en en la pantalla de la consola.
-//            System.out.println("Servidor HTTPS iniciado en el puerto 8066");
-//            System.out.println("Visita https://localhost:8066");
-
             logger.log(Level.INFO, "Servidor HTTPS iniciado en el puerto 8066\nVisita https://localhost:8066 \n");
             
             // Mientras exista una aceptación de conexión al servidor se inicia un hilo servidor para atender al cliente.
@@ -78,12 +78,8 @@ public class ServidorHTTP {
             }
             
         } catch (IOException e) {
-//            System.err.println("Error al iniciar el servidor SSL: " + e.getMessage());
-//            e.printStackTrace();
-//            System.err.println("Asegúrese de que el fichero 'AlmacenSSL' existe en la raíz del proyecto, es un keystore válido y la contraseña es correcta.");
-
             // Logear el error crítico al iniciar el servidor usando el logger
-            logger.log(Level.SEVERE, String.format("Error crítico al iniciar el servidor SLL: %s. %s.", e.getMessage(), e));
+            logger.log(Level.SEVERE, String.format("Error crítico al iniciar el servidor SLL: %s", e.getMessage()), e);
             // Si el servidor no puede iniciar, se cierra el programa finaliando sin exito de conexión.
             System.exit(1);
         } finally {
@@ -93,7 +89,7 @@ public class ServidorHTTP {
                     serverSocket.close();
                     logger.log(Level.INFO, "Servidor cerrado.");
                 } catch (IOException e) {
-                    logger.log(Level.SEVERE, String.format("Error al cerrar el ServerSocket: %s. %s.", e.getMessage(), e));
+                    logger.log(Level.SEVERE, String.format("Error al cerrar el ServerSocket: %s", e.getMessage()), e);
                 }
             }
         }
@@ -124,8 +120,8 @@ public class ServidorHTTP {
         }
 
         /**
-         * Método que se ejecuta cuando se inicia el hilo. Maneja la solicitud
-         * HTTP y genera una respuesta.
+         * Método run que se ejecuta cuando se inicia el hilo. Maneja la
+         * solicitud HTTP y genera una respuesta.
          */
         @Override
         public void run() {
@@ -139,7 +135,7 @@ public class ServidorHTTP {
                     
                     // Se gestiona una primera línea de solicitud nula.
                     if (primeraLineaPeticion == null) {
-                        logger.log(Level.SEVERE, "Petición HTTP nula, cierre prematuro del servidor.");
+                        logger.log(Level.WARNING, "Petición HTTP nula, cierre prematuro del servidor.");
                     } else {
                     // En caso de no ser nula se imprime por pantalla .
                     System.out.printf("Línea de Petición: %s.%n", primeraLineaPeticion);
@@ -150,15 +146,15 @@ public class ServidorHTTP {
                         // Línea de solicitud mal formada.
                         logger.log(Level.WARNING, String.format("Línea de solicitud mal formada: %s.", primeraLineaPeticion));
                         // Se envía respuesta del servidor al cliente.
-                        salida.printf("HTTP/1.1 400 Solicitud incorrecta%nContent-Type: text/plain%n%nSolicitud incorrecta");
+                        salida.println("HTTP/1.1 400 Solicitud incorrecta%nContent-Type: text/plain%n%nSolicitud incorrecta");
                     } else {
                         
-                        // Se declaran las variables necesarias, y se inician las necesarias.
-                        String metodo = partesSolicitudHTTP[0];
-                        String ruta = partesSolicitudHTTP[1];
-                        int contentLength = 0;
-                        String cookieHeader = null;
-                        String linea;
+                        // Se declaran las variables, y se inician las necesarias.
+                        String metodo = partesSolicitudHTTP[0]; // Se recoge el método HTTP de la solicitud recibida del cliente.
+                        String ruta = partesSolicitudHTTP[1]; // Se almacena la ruta (path) del recurso que el cliente está solicitando.
+                        int contentLength = 0; // Longitud del cuerpo de la solicitud HTTP en bytes.
+                        String cookieHeader = null; // Valor de la cabecera Cookie de la solicitud HTTP
+                        String linea; // Variable auxiliar que se utiliza para leer cada línea individualmente del flujo de entrada de la solicitud HTTP.
 
                         /*
                          * Bucle para leer cada línea de las cabeceras HTTP de
@@ -172,7 +168,7 @@ public class ServidorHTTP {
                                 try {
                                     contentLength = Integer.parseInt(linea.substring(16).trim());
                                 } catch (NumberFormatException e) {
-                                    logger.log(Level.SEVERE, String.format("Error al leer Content-Length: %s %s",  e.getMessage(), e));
+                                    logger.log(Level.SEVERE, String.format("Error al leer Content-Length: %s",  e.getMessage()), e);
                                 }
                             } else if (linea.toLowerCase().startsWith("cookie: ")) {
                                 cookieHeader = linea.substring(8).trim();
@@ -203,9 +199,9 @@ public class ServidorHTTP {
                         System.out.printf("Cuerpo de la Petición: %s.%n", cuerpo.toString());
 
                         // Variable que extrae el ID de sesión de la cabecera 'Cookie' de la petición.
-                        String idSesion = extractSessionIdFromCookie(cookieHeader);
+                        String idSesion = extraerSessionIdDeCookie(cookieHeader);
                         // Valida el ID de sesión para obtener el email del usuario; null si la sesión no es válida.
-                        String emailUsuario = SessionManager.validateSession(idSesion);
+                        String emailUsuario = SessionManager.validarSesion(idSesion);
                         
                         // Inicialización de variables para la respuesta del servidor
                         String respuestaHtml = ""; // Almacenará el contenido HTML a enviar al cliente.
@@ -217,7 +213,7 @@ public class ServidorHTTP {
                         if (ruta.equals("/login")) {
                             if (metodo.equals("GET")) {
                                 // Si es una petición GET a /login, devuelve el formulario de inicio de sesión.
-                                respuestaHtml = Paginas.getLoginFormHtml(null);
+                                respuestaHtml = Paginas.getLoginAndRegisterFormsHtml(null,null);
                             } else if (metodo.equals("POST")) {
                                 // Si es una petición POST a /login, procesa los datos del formulario.
                                 String[] datosFormulario = cuerpo.toString().split("&"); // Divide el cuerpo en pares clave=valor.
@@ -255,7 +251,7 @@ public class ServidorHTTP {
                                     // --- Autenticación del usuario ---
                                     if (autenticacionUsuario(email, password)) {
                                         // Autenticación exitosa: crea una nueva sesión y establece la cookie.
-                                        String newSessionId = SessionManager.createSession(email);
+                                        String newSessionId = SessionManager.crearSesion(email);
                                         establecerCookieCabecera = "session_id=" + newSessionId + "; Path=/; HttpOnly; Secure; SameSite=Lax";
                                         ubicacionRedireccion = "/menu"; // Redirige al usuario al menú principal.
                                     } else {
@@ -268,7 +264,7 @@ public class ServidorHTTP {
                             // Bloque similar al de login, pero para el registro de nuevos usuarios.
                             if (metodo.equals("GET")) {
                                 // Si es una petición GET a /register, devuelve el formulario de registro.
-                                respuestaHtml = Paginas.getRegisterFormHtml(null);
+                                respuestaHtml = Paginas.getLoginAndRegisterFormsHtml(null,null);
                             } else if (metodo.equals("POST")) {
                                 // Si es una petición POST a /register, procesa los datos del formulario.
                                 String[] formData = cuerpo.toString().split("&");
@@ -309,7 +305,7 @@ public class ServidorHTTP {
                                     // Intenta añadir el nuevo usuario a la base de datos/archivo.
                                     if (FileManager.addUser(email, hashedPassword)) {
                                         // Registro exitoso: crea una sesión para el nuevo usuario y redirige.
-                                        String newSessionId = SessionManager.createSession(email);
+                                        String newSessionId = SessionManager.crearSesion(email);
                                         establecerCookieCabecera = "session_id=" + newSessionId + "; Path=/; HttpOnly; Secure; SameSite=Lax";
                                         ubicacionRedireccion = "/menu"; // Redirect to game menu
                                     } else {
@@ -322,7 +318,7 @@ public class ServidorHTTP {
                             // Maneja la petición de cierre de sesión (logout). Se espera un POST para mayor seguridad.
                             if (idSesion != null) {
                                 // Invalida la sesión activa.
-                                SessionManager.invalidateSession(idSesion);
+                                SessionManager.invalidarSesion(idSesion);
                                 // Establece una cookie para expirar la sesión en el navegador, borrándola.
                                 establecerCookieCabecera = "session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax";
                             }
@@ -430,137 +426,197 @@ public class ServidorHTTP {
         }
 
         /**
-         * Authenticates a user against stored credentials.
-         * @param email The email to authenticate.
-         * @param password The plain-text password.
-         * @return true if authentication is successful, false otherwise.
+         * Método que autentica a un usuario verificando su email y contraseña.
+         * Este método recupera la contraseña hasheada del usuario desde un
+         * archivo y la compara de forma segura con la contraseña en texto plano
+         * proporcionada, utilizando el algoritmo BCrypt.
+         *
+         * @param email El correo electrónico del usuario que intenta iniciar
+         * sesión.
+         * @param password La contraseña en texto plano proporcionada por el
+         * usuario.
+         * @return {@code true} si la autenticación es exitosa (el email existe
+         * y la contraseña coincide), {@code false} en caso contrario (el email
+         * no existe, la contraseña no coincide, o el hash almacenado es
+         * inválido).
          */
         private boolean autenticacionUsuario(String email, String password) {
-            java.util.Map<String, String> users = FileManager.readUsers();
+            /*
+             * Se leen los usuarios almacenados: Llama a un método estático
+             * de la clase FileManager para obtener un mapa con los emails de
+             * los usuarios como claves y sus contraseñas hasheadas como
+             * valores.
+             */
+            Map<String, String> users = FileManager.lecturaUsuarios();
+            // Se obtiene la contraseña hasheada del usuario.
             String hashedPassword = users.get(email);
+            // Se verifica si el usuario existe.
             if (hashedPassword != null) {
+                // Si el usuario existe se intenta verificar su contraseña.
                 try {
                     return BCrypt.checkpw(password, hashedPassword);
                 } catch (IllegalArgumentException e) {
-                    // Log if password hash is invalid for some reason (e.g. not a BCrypt hash)
+                    // Manejo de excepciones (hash inválido) Si BCrypt lanza una IllegalArgumentException, significa que el 'hashedPassword' almacenado no es un hash BCrypt válido y se registra el error.
                     logger.log(Level.WARNING, String.format("Error checking password for user %s: %s", email, e.getMessage()));
                     return false;
                 }
             }
+            // Autenticación fallida si el email no se encontró en el mapa de usuario.
             return false;
         }
 
         /**
-         * Extracts the session ID from the "Cookie" HTTP header.
-         * @param cookieHeader The valor of the "Cookie" header.
-         * @return The session ID if found, null otherwise.
+         * Extrae el ID de sesión del encabezado HTTP "Cookie". Este método
+         * busca específicamente una cookie con el nombre "session_id" dentro
+         * del encabezado "Cookie" proporcionado y devuelve su valor.
+         *
+         * @param cookieHeader El valor completo del encabezado "Cookie"
+         * recibido en la solicitud HTTP.
+         * @return El ID de sesión si se encuentra una cookie "session_id", o
+         * {@code null} si el encabezado es nulo/vacío o no contiene la cookie
+         * "session_id".
          */
-        private String extractSessionIdFromCookie(String cookieHeader) {
+        private String extraerSessionIdDeCookie(String cookieHeader) {
+            // Validación inicial del encabezado, si el encabezado de la cookie es nulo o está vacío, no hay nada que procesar.
             if (cookieHeader == null || cookieHeader.isEmpty()) {
                 return null;
             }
-            String[] cookies = cookieHeader.split(";\\s*"); // Split by semicolon and optional whitespace
+            // Se divide el encabezado en cookies individuales deliminadas por punto y coma (;), seguidas de espacios en blanco opcionalmente.
+            String[] cookies = cookieHeader.split(";\\s*");
+            // Se intera sobre cada cookie de la lista anterior y se devuelve la cadena de caracteres siguiente a cada 'session_id='.
             for (String cookie : cookies) {
                 if (cookie.startsWith("session_id=")) {
                     return cookie.substring("session_id=".length());
                 }
             }
-            return null;
+            return null; // Se devuelve null si la ID de la sesión no ha sido encontrada.
         }
 
 
         /**
-         * Maneja la solicitud HTTP y genera la respuesta adecuada según la ruta
-         * y los parámetros.
+         * Método que maneja la solicitud HTTP y genera la respuesta adecuada
+         * según la ruta y los parámetros. Este método actúa como un enrutador
+         * principal para los diferentes juegos interactivos y sus estados.
          *
          * @param metodo El método HTTP (GET, POST).
-         * @param ruta La ruta de la solicitud HTTP (ej. /adivina, /dados).
-         * @param cuerpo La parte del cuerpo de la solicitud, utilizada para POST.
-         * @return El HTML de la página a devolver al cliente.
+         * @param ruta La ruta de la solicitud HTTP /adivina, /dados, /ppt
+         * @param cuerpo La parte del cuerpo de la solicitud, utilizada
+         * principalmente para solicitudes POST que envían datos de formulario.
+         * @return El HTML de la página a devolver al cliente, o una cadena
+         * vacía si la redirección es manejada por el contexto externo (run()).
          */
         public String gestionarSolicitud(String metodo, String ruta, String cuerpo) {
+            // Variable auxiliar para almacenar el HTML de la respuesta final.
             String respuesta = "";
-            // Extraer query parameters de la ruta para GET requests (e.g. /dados?reset=true)
-            String pathPart = ruta;
-            String queryPart = "";
+            // --- Extracción de la ruta base y parámetros de consulta ---
+            String partePath = ruta; // Inicializa la parte de la ruta sin parámetros de consulta.
+            String parteQuery = ""; // Inicializa la parte de los parámetros de consulta.
             if (ruta.contains("?")) {
-                pathPart = ruta.substring(0, ruta.indexOf('?'));
-                queryPart = ruta.substring(ruta.indexOf('?') + 1);
+                // Si la ruta contiene un signo de interrogación, significa que hay parámetros de consulta.
+                // Se divide la ruta en dos partes: la ruta base y los parámetros.
+                partePath = ruta.substring(0, ruta.indexOf('?'));
+                parteQuery = ruta.substring(ruta.indexOf('?') + 1);
             }
 
-
-            if (pathPart.equals("/menu")) {
+            // --- Lógica de enrutamiento por ruta y método HTTP ---
+            if (partePath.equals("/menu")) { // Si la ruta es "/menu", se genera la página del menú principal.
                 respuesta = Paginas.getMenuHtml();
-            } else if (pathPart.equals("/adivina")) {
-                if (metodo.equals("GET")) {
-                    // Reset game if requested (e.g., via link "Jugar otra vez")
-                    if (queryPart.contains("reset=true")) {
+            } else if (partePath.equals("/adivina")) { // Si la ruta es "/adivina" (juego "Adivina el Número").
+                if (metodo.equals("GET")) { // Si el método es GET (solicitud de página o reinicio).
+                    if (parteQuery.contains("reset=true")) { // Si los parámetros de consulta contienen "reset=true", se reinicia el juego.
                         Juego1Adivina.resetJuego();
                     }
-                    // Always show initial state or reset state on GET
-                    respuesta = Paginas.getAdivinarNumeroHtml("Intenta adivinar el número.", Juego1Adivina.intentos, Juego1Adivina.intentos >= Juego1Adivina.NUM_MAX_INTENTOS || (Juego1Adivina.numeroSolucion == -1)); // numeroSolucion == -1 could indicate a win
-                } else if (metodo.equals("POST")) {
-                    String numeroStr = extractParameter(cuerpo, "adivina");
+                    // Se obtiene el HTML de la página del juego "Adivina el Número", mostrando el estado inicial o el estado de reinicio.
+                    respuesta = Paginas.getAdivinarNumeroHtml("Intenta adivinar el número.", Juego1Adivina.intentos, Juego1Adivina.intentos >= Juego1Adivina.NUM_MAX_INTENTOS || (Juego1Adivina.numeroSolucion == -1));
+                } else if (metodo.equals("POST")) { // Si el método es POST (el usuario envió una suposición), se extrae el número propuesto del cuerpo de la solicitud POST.
+                    String numeroStr = extraeParametroCuerpo(cuerpo, "adivina");
+                    // Se llama a la lógica del juego para procesar el número y obtener la respuesta HTML.
                     respuesta = Juego1Adivina.adivinarNumero(numeroStr);
                 }
-            } else if (pathPart.equals("/dados")) {
-                if (metodo.equals("GET")) {
-                    if (queryPart.contains("reset=true")) {
-                        Juego2Dados.resetJuego();
+            } else if (partePath.equals("/dados")) { // Si la ruta es "/dados" (juego "Lanza Dados").
+                if (metodo.equals("GET")) { // Si el método es GET (solicitud de página o reinicio).
+                    boolean isResetRequest = false;
+                    if (parteQuery != null && parteQuery.contains("reset=true")) {
+                        // Si se pide reiniciar el juego, se reinicia el estado de "Lanza Dados".
+                        isResetRequest = true;
                     }
-                    respuesta = Juego2Dados.estadoLanzarDados(); // Show current or initial state
-                } else if (metodo.equals("POST")) {
+                    if (isResetRequest || (Juego2Dados.rondasJugadas >= Juego2Dados.TOTAL_RONDAS && Juego2Dados.rondasJugadas > 0)) {
+                        Juego2Dados.resetJuego(); // Reinicia el estado del juego de dados.
+                    }
+                    // Se obtiene el HTML de la página del juego "Lanza Dados", mostrando el estado actual o inicial.
+                    respuesta = Juego2Dados.estadoLanzarDados();
+                } else if (metodo.equals("POST")) { // Si el método es POST (el usuario pulsa el botón para lanzar los dados).
+                    // Se llama a la lógica del juego para lanzar los dados y obtener la respuesta HTML.
                     respuesta = Juego2Dados.lanzarDados();
                 }
-            } else if (pathPart.equals("/ppt")) {
-                if (metodo.equals("GET")) {
-                    if (queryPart.contains("reset=true")) {
-                        Juego3PPT.resetJuego();
-                    }
-                     // Always show initial state or reset state on GET
-                    respuesta = Paginas.getPiedraPapelTijerasHtml("Elige Piedra, Papel o Tijeras.", null, null, Juego3PPT.victoriasUsuario, Juego3PPT.victoriasServidor, Juego3PPT.rondasJugadas, Juego3PPT.rondasJugadas >= Juego3PPT.TOTAL_RONDAS);
-                } else if (metodo.equals("POST")) {
-                    String eleccionUsuario = extractParameter(cuerpo, "eleccion");
+            } else if (partePath.equals("/ppt")) { // Si la ruta es "/ppt" (juego "Piedra, Papel o Tijeras").
+                if (metodo.equals("GET")) { // Si el método es GET (solicitud de página o reinicio).
+                    Juego3PPT.resetJuego();
+                    respuesta = Juego3PPT.estadoPPT();
+
+                } else if (metodo.equals("POST")) { // Si el método es POST (el usuario hace una elección), se extrae la elección del usuario del cuerpo de la solicitud POST.
+                    String eleccionUsuario = extraeParametroCuerpo(cuerpo, "eleccion");
+                    // Se llama a la lógica del juego para procesar la elección y obtener la respuesta HTML.
                     respuesta = Juego3PPT.piedraPapelTijeras(eleccionUsuario);
                 }
-            } else if (pathPart.equals("/") || pathPart.isEmpty()) {
-                // If at root path, behavior might depend on login state (handled before this method)
-                // Or redirect to login/menu, currently handled in the main run() block.
-                // This method will be called only if session is valid for protected routes.
-                // So if user is at "/" and logged in, redirect to menu.
-                // This specific case is better handled in the main routing logic in run().
-                // For now, returning empty will trigger the 302 to /menu if logged in, or /login if not, from run().
-                 return ""; // Let the main run() method handle redirection for root.
+            } else if (partePath.equals("/") || partePath.isEmpty()) {
+                /*
+                 * Si la ruta es la raíz ("/") o está vacía, el método devuelve
+                 * una cadena vacía en este caso, dejando que la lógica
+                 * principal en el método 'run()' del servidor maneje la
+                 * redirección basada en el estado de la sesión
+                 */
+                return "";
             }
-            // else: respuesta will be empty, leading to a 404 or other handling in run()
+            // Si la ruta no coincide con ninguna de las rutas de juego o el menú, la variable 'respuesta' permanecerá vacía, llegando a una respuesta 404 Not Found manejada en el método 'run()' principal.
             return respuesta;
         }
 
         /**
-         * Extrae un parámetro del cuerpo de una solicitud POST (application/x-www-form-urlencoded).
-         * @param cuerpo La cadena del cuerpo de la solicitud.
-         * @param nombreParametro El nombre del parámetro a extraer.
-         * @return El valor del parámetro, o null si no se encuentra.
+         * Método que extrae el valor de un parámetro específico del cuerpo de una
+         * solicitud HTTP POST. Este método está diseñado para cuerpos de tipo
+         * `application/x-www-form-urlencoded`, donde los parámetros están
+         * codificados como `nombre=valor&nombre2=valor2`. También se encarga de
+         * decodificar el valor del parámetro usando URLDecoder.
+         *
+         * @param cuerpo La cadena completa del cuerpo de la solicitud HTTP
+         * @param nombreParametro El nombre del parámetro cuyo valor se desea
+         * extraer
+         * @return El valor decodificado del parámetro especificado si se
+         * encuentra, o {@code null} si el cuerpo es nulo/vacío, el parámetro no
+         * existe o hay un error de decodificación.
          */
-        private String extractParameter(String cuerpo, String nombreParametro) {
+        private String extraeParametroCuerpo(String cuerpo, String nombreParametro) {
+            // Se Verifica si el cuerpo de la solicitud es nulo o está vacío, no hay parámetros que extraer.
             if (cuerpo == null || cuerpo.isEmpty()) {
                 return null;
             }
+            // Se divide el cuerpo en pares de parámetros, se separa el cuerpo de la solicitud en un array de cadenas, usando '&' como delimitador.
+            // Cada elemento del array será un par "nombre=valor"
             String[] parametros = cuerpo.split("&");
-            for (String param : parametros) {
-                String[] pair = param.split("=", 2); // Split only on the first '='
+            // Se itera sobre cada par de parámetro, se recorre cada cadena en el array 'parametros'.
+            for (String parametro : parametros) {
+                // Se separa el nombre y valor del parámetro dividiendo cada par "nombre=valor" en dos partes usando '=' como delimitador.
+                // El límite '2' asegura que solo se divida en el primer '=', útil si el valor contiene '='.
+                String[] pair = parametro.split("=", 2);
+                // Se comprueba si el par es válido y si coincide el nombre, verificando que el par tenga dos partes (nombre y valor) y que el nombre coincida con el buscado.
                 if (pair.length == 2 && pair[0].equals(nombreParametro)) {
+                    // Se intenta decodificar el valor del parámetro
                     try {
-                        return java.net.URLDecoder.decode(pair[1], StandardCharsets.UTF_8.name());
+                        // Utiliza URLDecoder para decodificar el valor del parámetro y se especifica UTF-8 como codificación estándar.
+                        return URLDecoder.decode(pair[1], StandardCharsets.UTF_8.name());
                     } catch (UnsupportedEncodingException e) {
-                        logger.log(Level.SEVERE, "Error decoding URL parameter: " + pair[1], e);
-                        return pair[1]; // Return undecoded as a fallback, though this shouldn't happen with UTF-8
+                        // Se manejan los errores de codificación no soportada.
+                        logger.log(Level.SEVERE, String.format("Error decodificando el parámetro de la URL (codificación UTF-8): %s",pair[1]), e);
+                        return pair[1];
                     } catch (IllegalArgumentException e) {
-                        logger.log(Level.WARNING, "Error decoding URL parameter (illegal hex characters): " + pair[1], e);
-                        return null; // Or handle as appropriate
+                        // Se manejan los errores de caracteres ilegales.
+                        logger.log(Level.WARNING, String.format("Error decodificando el parámetro de la URL (caracteres ilegale): %s", pair[1]), e);
+                        return null;
                     }
                 }
             }
+            // Se devuelve null cuando el parámetro no ha sido encontrado en el cuerpo de la solicitud.
             return null;
         }
     }
